@@ -92,6 +92,7 @@ static void echo_task()
                 //         .password = WIFI_PASS,
                 //     },
                 // };
+                vTaskDelay(1500 / portTICK_RATE_MS);
                 wifi_config_t wifi_config;
                 for (int i = 0; i < strlen(ssidInput); i++)
                 {
@@ -125,7 +126,7 @@ static void echo_task()
                     vTaskDelay(1000 / portTICK_RATE_MS);
                 }
             }
-            printf("\nSSID: %s, PASSWORD: %s", ssidInput, passwordInput);
+            printf("\nSSID: %s, PASSWORD: %s \n", ssidInput, passwordInput);
             fflush(stdout);
             index = index + 1;
             // vTaskDelay(2000 / portTICK_PERIOD_MS);
