@@ -1,15 +1,4 @@
-/* Scan Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-/*
-    This example shows how to scan for available set of APs.
-*/
+/** SCAN **/
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -17,6 +6,16 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
+
+/** CONNECT **/
+#include "esp_system.h"
+#include "esp_event_loop.h"
+// Event group
+#define WIFI_SSID "125"
+#define WIFI_PASS "f0012345678900"
+
+static EventGroupHandle_t wifi_event_group;
+const int CONNECTED_BIT = BIT0;
 
 /** UART **/
 #include <stdio.h>
@@ -33,6 +32,7 @@
 
 #define BUF_SIZE (1024)
 
+/********MAIN (UART + CONNECT) *********/
 static void echo_task()
 {
     /* Configure parameters of an UART driver,
@@ -50,8 +50,8 @@ static void echo_task()
     // Configure a temporary buffer for the incoming data
     uint8_t *data = (uint8_t *)malloc(BUF_SIZE);
     int index = 0;
-    char ssid[20];
-    char password[20];
+    char ssidInput[32] = "";
+    char passwordInput[64] = "";
     while (1)
     {
         // Read data from the UART
@@ -67,10 +67,10 @@ static void echo_task()
                 // ssid = (const char *)data;
                 for (int i = 0; i < len; i++)
                 {
-                    ssid[i] = ((const char *)data)[i];
+                    ssidInput[i] = ((const char *)data)[i];
                 }
-                ssid[len] = '\0';
-                printf("\nSSID %d: %s", index, ssid);
+                ssidInput[len] = '\0';
+                printf("\nSSID %d: %s", index, ssidInput);
                 fflush(stdout);
             }
             else if (index == 1)
@@ -78,13 +78,54 @@ static void echo_task()
                 // password = (const char *)data;
                 for (int i = 0; i < len; i++)
                 {
-                    password[i] = ((const char *)data)[i];
+                    passwordInput[i] = ((const char *)data)[i];
                 }
-                password[len] = '\0';
-                printf("\nPASSWORD %d: %s", index, ssid);
+                passwordInput[len] = '\0';
+                printf("\nPASSWORD %d: %s", index, passwordInput);
                 fflush(stdout);
             }
-            printf("\nSSID: %s, PASSWORD: %s", ssid, password);
+            else if (index == 2)
+            {
+                // wifi_config_t wifi_config = {
+                //     .sta = {
+                //         .ssid = (const)ssidInput,
+                //         .password = WIFI_PASS,
+                //     },
+                // };
+                wifi_config_t wifi_config;
+                for (int i = 0; i < strlen(ssidInput); i++)
+                {
+                    wifi_config.sta.ssid[i] = ssidInput[i];
+                }
+                wifi_config.sta.ssid[strlen(ssidInput)] = '\0';
+                for (int i = 0; i < strlen(passwordInput); i++)
+                {
+                    wifi_config.sta.password[i] = passwordInput[i];
+                }
+                wifi_config.sta.password[strlen(passwordInput)] = '\0';
+                // strcpy(wifi_config.sta.ssid, WIFI_SSID);
+                // wifi_config.sta.password = WIFI_PASS;
+                ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+                ESP_ERROR_CHECK(esp_wifi_start());
+                printf("Connecting to %s\n", wifi_config.sta.ssid);
+                // wait for connection
+                printf("Main task: waiting for connection to the wifi network... ");
+                xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
+                printf("connected!\n");
+
+                // print the local IP address
+                tcpip_adapter_ip_info_t ip_info;
+                ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
+                printf("IP Address:  %s\n", ip4addr_ntoa(&ip_info.ip));
+                printf("Subnet mask: %s\n", ip4addr_ntoa(&ip_info.netmask));
+                printf("Gateway:     %s\n", ip4addr_ntoa(&ip_info.gw));
+
+                while (1)
+                {
+                    vTaskDelay(1000 / portTICK_RATE_MS);
+                }
+            }
+            printf("\nSSID: %s, PASSWORD: %s", ssidInput, passwordInput);
             fflush(stdout);
             index = index + 1;
             // vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -92,9 +133,38 @@ static void echo_task()
     }
 }
 
-///////////
+/*****************************/
 
-/** WIFI **/
+/**** WIFI CONNECT ***********/
+
+// Wifi event handler
+static esp_err_t event_handler(void *ctx, system_event_t *event)
+{
+    switch (event->event_id)
+    {
+
+    case SYSTEM_EVENT_STA_START:
+        esp_wifi_connect();
+        break;
+
+    case SYSTEM_EVENT_STA_GOT_IP:
+        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        break;
+
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        break;
+
+    default:
+        break;
+    }
+
+    return ESP_OK;
+}
+
+/********************************/
+
+/** WIFI SCAN **/
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
 
 static const char *TAG = "scan";
@@ -219,10 +289,14 @@ static void wifi_scan(void)
         }
         ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
     }
+    // ESP_ERROR_CHECK(esp_event_loop_delete_default());
+    // ESP_ERROR_CHECK(esp_wifi_scan_stop());
+    ESP_ERROR_CHECK(esp_wifi_restore());
 }
 
 void app_main(void)
 {
+    /****** WIFI SCAN **********/
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -233,6 +307,33 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     wifi_scan();
-    // initUart();
+
+    /****************************/
+
+    /********* WIFI CONNECT INIT *********/
+    // disable the default wifi logging
+    esp_log_level_set("wifi", ESP_LOG_NONE);
+
+    // initialize NVS
+    // ESP_ERROR_CHECK(nvs_flash_init()); //
+
+    // create the event group to handle wifi events
+    wifi_event_group = xEventGroupCreate();
+
+    // initialize the tcp stack
+    tcpip_adapter_init();
+
+    // initialize the wifi event handler
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+
+    // initialize the wifi stack in STAtion mode with config in RAM
+    wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&wifi_init_config));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+
+    /***************************/
+
+    /************ MAIN TASK (UART + CONNECT) ********/
     xTaskCreate(echo_task, "uart_echo_task", 1024 * 2, configMAX_PRIORITIES, 10, NULL);
 }

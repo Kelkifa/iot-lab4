@@ -43,6 +43,15 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 // Main task
 void main_task(void *pvParameter)
 {
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = WIFI_SSID,
+            .password = WIFI_PASS,
+        },
+    };
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    printf("Connecting to %s\n", WIFI_SSID);
     // wait for connection
     printf("Main task: waiting for connection to the wifi network... ");
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
@@ -86,15 +95,15 @@ void app_main()
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
     // configure the wifi connection and start the interface
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASS,
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    printf("Connecting to %s\n", WIFI_SSID);
+    // wifi_config_t wifi_config = {
+    //     .sta = {
+    //         .ssid = WIFI_SSID,
+    //         .password = WIFI_PASS,
+    //     },
+    // };
+    // ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    // ESP_ERROR_CHECK(esp_wifi_start());
+    // printf("Connecting to %s\n", WIFI_SSID);
 
     // start the main task
     xTaskCreate(&main_task, "main_task", 2048, NULL, 5, NULL);
