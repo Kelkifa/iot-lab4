@@ -11,8 +11,8 @@
 #include "esp_system.h"
 #include "esp_event_loop.h"
 // Event group
-#define WIFI_SSID "125"
-#define WIFI_PASS "f0012345678900"
+// #define WIFI_SSID "125"
+// #define WIFI_PASS "f0012345678900"
 
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
@@ -289,8 +289,6 @@ static void wifi_scan(void)
         }
         ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
     }
-    // ESP_ERROR_CHECK(esp_event_loop_delete_default());
-    // ESP_ERROR_CHECK(esp_wifi_scan_stop());
     ESP_ERROR_CHECK(esp_wifi_restore());
 }
 
@@ -321,9 +319,10 @@ void app_main(void)
     wifi_event_group = xEventGroupCreate();
 
     // initialize the tcp stack
-    tcpip_adapter_init();
+    // tcpip_adapter_init();
 
     // initialize the wifi event handler
+    // ESP_ERROR_CHECK(esp_event_loop_delete_default());
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     // initialize the wifi stack in STAtion mode with config in RAM
