@@ -1,2 +1,2 @@
-idf_component_register(SRCS "scan.c"  "wifi_connection.c"  "serial.c"  
+idf_component_register(SRCS "main.c"    
                     INCLUDE_DIRS ".")

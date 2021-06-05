@@ -2125,3 +2125,14 @@
 84	175	6443242481852385	bootloader/bootloader.elf	9e1ec631343cd4e5
 84	175	6443242481852385	bootloader/bootloader.bin	9e1ec631343cd4e5
 84	175	6443242481852385	bootloader/bootloader.map	9e1ec631343cd4e5
+103	270	6443242481852385	bootloader-prefix/src/bootloader-stamp/bootloader-build	9e1ec631343cd4e5
+103	270	6443242481852385	bootloader/bootloader.elf	9e1ec631343cd4e5
+103	270	6443242481852385	bootloader/bootloader.bin	9e1ec631343cd4e5
+103	270	6443242481852385	bootloader/bootloader.map	9e1ec631343cd4e5
+108	937	6445911650190144	esp-idf/app_update/CMakeFiles/__idf_app_update.dir/esp_app_desc.c.obj	629ddf8155f14335
+937	1106	6445911651861464	esp-idf/app_update/libapp_update.a	c6f65d0a898ff038
+1107	2736	6445911668170082	esp-idf/main/CMakeFiles/__idf_main.dir/scan.c.obj	b16d25bdeaa49e57
+2745	2845	6445911669267125	esp-idf/main/libmain.a	1e4a87cabe7743bf
+2845	6505	6445911705527798	esp-idf/esp32/ld/esp32.project.ld	a722e30830532692
+6505	11880	6445911759387164	scan.elf	32da4b188a4482f1
+11881	12353	6445911764349597	.bin_timestamp	201a28eb34d71266

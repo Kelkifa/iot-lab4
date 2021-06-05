@@ -61,10 +61,9 @@ static void echo_task()
         {
             data[len] = '\0';
             printf("\n");
-            // uart_write_bytes(UART_NUM_0, (const char *)data, len);
+            // Khi index = 0 lưu giá trị từ buffer cho biến ssidInput đã khai báo
             if (index == 0)
             {
-                // ssid = (const char *)data;
                 for (int i = 0; i < len; i++)
                 {
                     ssidInput[i] = ((const char *)data)[i];
@@ -73,9 +72,9 @@ static void echo_task()
                 printf("\nSSID %d: %s", index, ssidInput);
                 fflush(stdout);
             }
+            // Khi index = 0 lưu giá trị từ buffer cho biến passwordInput đã khai báo
             else if (index == 1)
             {
-                // password = (const char *)data;
                 for (int i = 0; i < len; i++)
                 {
                     passwordInput[i] = ((const char *)data)[i];
@@ -86,13 +85,8 @@ static void echo_task()
             }
             else if (index == 2)
             {
-                // wifi_config_t wifi_config = {
-                //     .sta = {
-                //         .ssid = (const)ssidInput,
-                //         .password = WIFI_PASS,
-                //     },
-                // };
                 vTaskDelay(1500 / portTICK_RATE_MS);
+
                 wifi_config_t wifi_config;
                 for (int i = 0; i < strlen(ssidInput); i++)
                 {
@@ -104,8 +98,7 @@ static void echo_task()
                     wifi_config.sta.password[i] = passwordInput[i];
                 }
                 wifi_config.sta.password[strlen(passwordInput)] = '\0';
-                // strcpy(wifi_config.sta.ssid, WIFI_SSID);
-                // wifi_config.sta.password = WIFI_PASS;
+
                 ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
                 ESP_ERROR_CHECK(esp_wifi_start());
                 printf("Connecting to %s\n", wifi_config.sta.ssid);
@@ -126,10 +119,10 @@ static void echo_task()
                     vTaskDelay(1000 / portTICK_RATE_MS);
                 }
             }
+
             printf("\nSSID: %s, PASSWORD: %s \n", ssidInput, passwordInput);
             fflush(stdout);
             index = index + 1;
-            // vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
     }
 }
